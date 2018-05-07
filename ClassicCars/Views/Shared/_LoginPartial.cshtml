@@ -1,0 +1,47 @@
+﻿@using Microsoft.AspNet.Identity
+@if (Request.IsAuthenticated)
+{
+    using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm", @class = "navbar-right" }))
+    {
+    @Html.AntiForgeryToken()
+
+    <ul class="nav navbar-nav navbar-right">
+        <li>
+            @Html.ActionLink(User.Identity.GetUserName(), "Index", "Manage", routeValues: null, htmlAttributes: new { title = "Manage" })
+        </li>
+        <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">Cars<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+                <li>@Html.ActionLink("Manage Cars", "ManageCars", "Home")</li>
+                <li>@Html.ActionLink("Add a New Car", "NewCar", "Home")</li>
+            </ul>
+        </li>
+        <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">User Cars<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+                <li>@Html.ActionLink("Manage Your Cars", "ManageUserCars", "Home")</li>
+                <li>@Html.ActionLink("Add a New User Car", "NewUserCar", "Home")</li>
+                <li>@Html.ActionLink("Browse Other Users' Cars", "BrowseCars", "Home")</li>
+            </ul>
+        </li>
+        <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">Ratings<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+                <li>@Html.ActionLink("Manage Your Ratings", "ManageRatings", "Home")</li>
+                <li>@Html.ActionLink("Add New Ratings", "NewRatings", "Home")</li>
+            </ul>
+        </li>
+        <li>@Html.ActionLink("Manage Your Swap Requests", "ManageSwapRequests", "Home")</li>
+        <li>@Html.ActionLink("Credits Test", "CreditsTest", "Home")</li>
+        <li><a href="javascript:document.getElementById('logoutForm').submit()">Log off</a></li>
+    </ul>
+    }
+}
+else
+{
+    <ul class="nav navbar-nav navbar-right">
+        <li>@Html.ActionLink("Register", "Register", "Account", routeValues: null, htmlAttributes: new { id = "registerLink" })</li>
+        <li>@Html.ActionLink("Log in", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink" })</li>
+        <li>@Html.ActionLink("Recommender Demo", "RecommenderDemo", "Home")</li>
+    </ul>
+}

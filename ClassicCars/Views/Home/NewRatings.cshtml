@@ -1,0 +1,127 @@
+﻿@{
+    ViewBag.Title = "New Ratings";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section stylesheets {
+    <link href="@Url.Content("~/Content/rateit.css")" rel="stylesheet" type="text/css" />
+}
+
+<h2>Add New Ratings</h2>
+<p>Here you can add new ratings. If you want to manage your current ratings, @Html.ActionLink("do so here", "ManageRatings", "Home").</p>
+<div class="table-responsive">
+    <table id="cars" class="table">
+        <tr>
+            <th>Name</th>
+            <th>Rating</th>
+        </tr>
+    </table>
+</div>
+<div id="output"></div>
+<button id="submit" type="button" class="btn btn-primary">Submit</button>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+
+        // display ratings for cars the user hasn't rated yet
+        $.ajax({
+            url: '@Url.Action("AllCarsUserNotRated", "Api")',
+            method: 'GET',
+            dataType: 'json'
+        })
+        .done(function (cars) {
+            if (!cars.error) {
+                if (cars[0]) {
+                    var list = $('#cars');
+
+                    // for each rating
+                    for (var i = 0; i < cars.length; i++) {
+                        var car = cars[i];
+
+                        list.append(
+                            '<tr class="rating">' +
+                                '<td><a href="@Url.Action("ManageCar", "Home")?id=' + car.id + '">' + car.title + '</a></td>' +
+                                '<td>' +
+                                    '<input type="range" min="1" max="6" value="1" step="1" id="' + car.id + '" />' +
+                                    '<div class="rateit" data-rateit-backingfld="#' + car.id + '"></div>' +
+                                '</td>' +
+                            '</tr>'
+                        );
+                    }
+
+                    loadJS();
+                }
+                else {
+                    $('#output').html('You have already rated every car! <a href="@Url.Action("NewCar", "Home")">Add a new car</a>');
+                    $('#submit').attr('disabled', 'disabled');
+                }
+            }
+            else {
+                alert(cars.error);
+            }
+        })
+        .fail(function () {
+            alert("Unknown error occurred");
+        });
+
+        function loadJS() {
+            $.getScript("@Url.Content("~/Scripts/jquery.rateit.min.js")");
+
+            // submit button
+            $('#submit').click(function (e) {
+                var btn = $(this);
+
+                e.preventDefault();
+
+                // if disabled stop
+                if (btn.attr('disabled'))
+                    return;
+
+                // disable button to not allow spamming of button
+                btn.attr('disabled', 'disabled');
+
+                // add wait notice
+                $('#output').html('Submitting your ratings... please wait <img src="@Url.Content("~/Content/progress-wheel.gif")" />');
+
+                // for each rating
+                $('.rating').each(function (i) {
+                    var $this = $(this);
+
+                    setTimeout(function () {
+                        var val = $this.find('td').find('.rateit').find('.rateit-range').attr('aria-valuenow') - 1;
+
+                        if (val > 0) {
+
+                            var json = {
+                                carId: $this.find('td').find('input').attr('id'),
+                                carTitle: $this.find('td').find('a').text(),
+                                rating: val
+                            }
+
+                            var data = {
+                                json: JSON.stringify(json)
+                            }
+
+                            $.ajax({
+                                type: 'POST',
+                                async: true,
+                                dataType: 'json',
+                                url: '@Url.Action("CreateRating","Api")',
+                                data: data
+                            });
+                        }
+
+                        // redirect the user when finished after 3 seconds
+                        if (i === $('.rating').length - 1) {
+                            setTimeout(function () {
+                                location.replace('@Url.Action("ManageRatings", "Home")');
+                            }, 3000);
+                        }
+                    }, i * 1000); // up to one API request per second to not overwhelm the server
+                });
+            });
+        }
+    });
+</script>
+}

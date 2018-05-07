@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Schema Namespace="AppDBModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+  <EntityType Name="Car">
+    <Key>
+      <PropertyRef Name="carId" />
+    </Key>
+    <Property Name="carId" Type="Int32" Nullable="false" />
+    <Property Name="mpg" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="cylinders" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="engine" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="horsepower" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="weight" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="acceleration" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="year" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="origin" Type="String" MaxLength="10" FixedLength="true" Unicode="true" Nullable="false" />
+    <Property Name="title" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Rating">
+    <Key>
+      <PropertyRef Name="ratingId" />
+    </Key>
+    <Property Name="ratingId" Type="Int32" Nullable="false" />
+    <Property Name="carId" Type="Int32" Nullable="false" />
+    <Property Name="userId" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+    <Property Name="carTitle" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+    <Property Name="stars" Type="Int32" Nullable="false" />
+  </EntityType>
+  <EntityType Name="UserCar">
+    <Key>
+      <PropertyRef Name="carId" />
+    </Key>
+    <Property Name="carId" Type="Int32" Nullable="false" />
+    <Property Name="userId" Type="String" MaxLength="50" FixedLength="false" Unicode="true" Nullable="false" />
+    <Property Name="isMatched" Type="Int16" />
+  </EntityType>
+  <EntityContainer Name="MainDB" annotation:LazyLoadingEnabled="true">
+    <EntitySet Name="Cars" EntityType="Self.Car" />
+    <EntitySet Name="Ratings" EntityType="Self.Rating" />
+    <EntitySet Name="UserCars" EntityType="Self.UserCar" />
+  </EntityContainer>
+</Schema>

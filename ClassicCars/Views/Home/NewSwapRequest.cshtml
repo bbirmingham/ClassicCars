@@ -1,0 +1,212 @@
+﻿@{
+    ViewBag.Title = "Request Swap";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Request Swap</h2>
+<p>Here you can add request to swap the car you want.</p>
+<h3>Their Car</h3>
+<div class="table-responsive">
+    <table id="chosen-car" class="table">
+        <tr>
+            <th>Title</th>
+            <th>Colour</th>
+        </tr>
+    </table>
+</div>
+<h3>Your Car</h3>
+<select id="user-car"></select>
+
+<div id="preference-container">
+    <h3>Their Preference</h3>
+    <p>You can check the estimated preference for the user you are requesting to swap using the button below. This requires 10 credits per check.</p>
+    <button id="preference" type="button" class="btn btn-primary">Check</button>
+    <div id="output"></div>
+    <br/><br/>
+</div>
+
+<button id="submit" type="button" class="btn btn-primary">Submit</button>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function() {
+
+        var userCarId = main.getUrlVar('id');
+        $('#preference-container').hide();
+
+        if (!userCarId) {
+            alert('No ID provided!');
+
+            location.replace('@Url.Action("BrowseCars", "Home")');
+        }
+
+        var json = {
+            id: userCarId
+        };
+
+        var data = {
+            json: JSON.stringify(json)
+        };
+
+        var targetUserName;
+        var targetUserId;
+        var targetCarId;
+
+        // get details of chosen car
+        $.ajax({
+            url: '@Url.Action("UserCar", "Api")',
+            method: 'GET',
+            data: data,
+            dataType: 'json'
+        })
+        .done(function (userCar) {
+            if (!userCar.error) {
+                var table = $('#chosen-car');
+                targetUserName = userCar.userName;
+                targetUserId = userCar.userId;
+                targetCarId = userCar.carId;
+
+                table.append(
+                    '<tr>' +
+                        '<td id="car-title">' + userCar.carTitle + '</td>' +
+                        '<td id="car-colour">' + userCar.colour + '</td>' +
+                    '</tr>'
+                );
+
+                // get all user's cars not matched
+                $.ajax({
+                    url: '@Url.Action("UserCarsNotMatched", "Api")',
+                    method: 'GET',
+                    dataType: 'json'
+                })
+                .done(function (cars) {
+                    if (!cars.error) {
+                        var list = $('#user-car');
+
+                        // add each car
+                        for (var i = 0; i < cars.length; i++) {
+                            var car = cars[i];
+
+                            list.append(
+                                '<option value="' + car.id + '|' + car.carTitle + '|' + car.colour + '|' + car.carId + '">' + car.carTitle + ' (' + car.colour + ')</option>'
+                            );
+                        }
+                    }
+                    else {
+                        alert(cars.error);
+                    }
+                })
+                .fail(function () {
+                    alert("Unknown error occurred");
+                });
+
+                var json = {
+                    amount: 10
+                };
+
+                var data = {
+                    json: JSON.stringify(json)
+                };
+
+                // see if user can perform preference check
+                $.ajax({
+                    url: '@Url.Action("CanDoCommercialAction", "Api")',
+                    method: 'GET',
+                    dataType: 'json',
+                    data: data
+                })
+                .done(function (result) {
+                    if (result == true) {
+
+                        $('#preference-container').show();
+                        
+                        $('#preference').click(function (e) {
+                            e.preventDefault();
+
+                            var $this = $(this);
+
+                            if ($this.attr('disabled')) return;
+
+                            var prompt = confirm("Are you sure you want to request a preference check? This will cost 10 credits.");
+
+                            if (prompt) {
+                                var params = $('#user-car').val().split("|");
+
+                                var json = {
+                                    userId: userCar.userId,
+                                    carId: params[3]
+                                };
+
+                                var data = {
+                                    json: JSON.stringify(json)
+                                };
+
+                                // send preference request
+                                $.ajax({
+                                    type: 'GET',
+                                    async: true,
+                                    dataType: 'json',
+                                    url: '@Url.Action("EstimatePreferenceForCar", "Api")',
+                                    data: data
+                                })
+                                .done(function (result) {
+                                    if (result == "Not enough credits!")
+                                        alert(result);
+                                    else if (result == "NaN")
+                                        $('#output').append("The system was unable to determine a preference for " + params[1] + " (" + params[2] + ").<br>");
+                                    else
+                                        $('#output').append("The estimated preference for the " + params[1] + " (" + params[2] + ") is " + result + ".<br>");
+                                });
+                            }
+                        });
+                    }
+                });
+            }
+            else {
+                alert(userCar.error);
+            }
+        })
+        .fail(function () {
+            alert("Unknown error occurred");
+        });
+
+        $('#submit').click(function () {
+            var prompt = confirm("Are you sure you want to request the swap using the car you selected?");
+
+            if (prompt) {
+                var params = $('#user-car').val().split("|");
+
+                var json = {
+                    requestCarId: params[3],
+                    targetCarId: targetCarId,
+                    requestUserCarId: params[0],
+                    targetUserCarId: userCarId,
+                    targetUserId: targetUserId,
+                    targetUserName: targetUserName,
+                    requestUserCarTitle: params[1],
+                    targetUserCarTitle: $('#car-title').text(),
+                    requestUserCarColour: params[2],
+                    targetUserCarColour: $('#car-colour').text()
+                };
+
+                var data = {
+                    json: JSON.stringify(json)
+                };
+
+                // send swap request
+                $.ajax({
+                    type: 'POST',
+                    async: true,
+                    dataType: 'json',
+                    url: '@Url.Action("CreateSwapRequest", "Api")',
+                    data: data
+                })
+
+                setTimeout(function () {
+                    location.replace('@Url.Action("ManageSwapRequests", "Home")');
+                }, 3000);
+            }
+        });
+    });
+    </script>
+}

@@ -1,0 +1,125 @@
+﻿@{
+    ViewBag.Title = "Manage Your Cars";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Manage Your Cars</h2>
+<div class="table-responsive">
+    <table id="cars" class="table">
+        <tr>
+            <th>Name</th>
+            <th>Colour</th>
+            <th>Delete</th>
+        </tr>
+    </table>
+</div>
+<button id="submit" type="button" class="btn btn-primary">Submit</button>
+<div id="output"></div>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+
+        // display cars the user has made before
+        $.ajax({
+            url: '@Url.Action("UserCars", "Api")',
+            method: 'GET',
+            dataType: 'json'
+        })
+            .done(function (cars) {
+                if (!cars.error) {
+                    if (cars[0]) {
+                        var table = $('#cars');
+
+                        // for each car
+                        for (var i = 0; i < cars.length; i++) {
+                            var car = cars[i];
+
+                            table.append(
+                                '<tr>' +
+                                    '<td>' + car.carTitle + '</td>' +
+                                    '<td>' + car.colour + '</td>' +
+                                    '<td><input data-id="' + car.id + '" type="checkbox" class="delete-chk" /></td>' +
+                                '</tr>'
+                            );
+                        }
+
+                        loadJS();
+                    }
+                    else {
+                        $('#output').html('You have no cars! <a href="@Url.Action("NewUserCar", "Home")">Add your cars</a>');
+                        $('#submit').attr('disabled', 'disabled');
+                    }
+                }
+                else {
+                    console.log(cars.error);
+                }
+            })
+            .fail(function () {
+                alert("Unknown error occurred");
+            });
+
+        function loadJS() {
+
+            // submit button
+            $('#submit').click(function (e) {
+                var btn = $(this);
+
+                e.preventDefault();
+
+                // if disabled stop
+                if (btn.attr('disabled'))
+                    return;
+
+                // disable button to not allow spamming requests
+                btn.attr('disabled', 'disabled');
+
+                // add notice
+                $('#output').html('Removing your selected cars... please wait <img src="@Url.Content("~/Content/progress-wheel.gif")" />');
+
+                if ($('.delete-chk:checked').length) {
+
+                    // submit each selected car
+                    $('.delete-chk:checked').each(function (i) {
+                        var $this = $(this);
+
+                        setTimeout(function () {
+
+                            var json = {
+                                id: $this.data('id')
+                            };
+
+                            var data = {
+                                json: JSON.stringify(json)
+                            }
+
+                            $.ajax({
+                                type: 'DELETE',
+                                async: true,
+                                dataType: 'json',
+                                url: '@Url.Action("DeleteUserCar", "Api")',
+                                data: data
+                            });
+
+                        }, i * 1000); // up to one API request per second to not overwhelm the server
+
+                        // redirect the user when finished after 3 seconds
+                        if (i === $('.delete-chk:checked').length - 1) {
+                            setTimeout(function () {
+                                location.reload();
+                            }, 3000);
+                        }
+                    });
+                }
+                else {
+                    // remove button disable
+                    btn.removeAttr('disabled');
+
+                    // update notice
+                    $('#output').html('Nothing to remove!');
+                }
+            });
+        }
+    });
+    </script>
+}

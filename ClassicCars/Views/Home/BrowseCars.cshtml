@@ -1,0 +1,162 @@
+﻿@{
+    ViewBag.Title = "Browse Cars";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Browse Cars</h2>
+<p>Here you can look for cars available for swapping.</p>
+<h3>Search Cars</h3>
+<p>Searching with complete words and casing is not necessary e.g. "r" for colour would return "Red" and "Brown" cars. If a value for both name and colour is provided, then the results must match both fields.</p>
+<form>
+    <div class="form-group">
+        <label for="title">Name of Car:</label>
+        <input class="form-control" id="title" type="text" placeholder="The car name" maxlength="30" name="title" />
+    </div>
+    <div class="form-group">
+        <label for="title">Colour of Car:</label>
+        <input class="form-control" id="colour" type="text" placeholder="The car colour" maxlength="30" name="colour" />
+    </div>
+    <button id="submit" type="button" class="btn btn-primary">Search</button>
+</form>
+<div id="similarcars-container">
+    <h3>Similar Cars</h3>
+    <p>You can display up to ten cars from users with similar tastes using the button below. This requires 20 credits.</p>
+    <button id="similarcars" type="button" class="btn btn-primary">Get Similar Cars</button>
+    <br /><br />
+</div>
+<div id="output"></div>
+<div class="table-responsive">
+    <table id="search-results" class="table">
+      <tr>
+        <th>Name</th>
+        <th>Colour</th>
+      </tr>
+    </table>
+</div>
+@section scripts {
+<script type="text/javascript">
+    $(function () {
+
+        $('#similarcars-container').hide();
+
+        // submit button
+        $('#submit').click(function (e) {
+            var btn = $(this);
+
+            e.preventDefault();
+
+            // if disabled stop
+            if (btn.attr('disabled'))
+                return;
+
+            // disable button to not allow spamming of button
+            btn.attr('disabled', 'disabled');
+
+            // add wait notice
+            $('#output').html('Searching... please wait <img src="@Url.Content("~/Content/progress-wheel.gif")" />');
+
+            var title = $('#title').val();
+            var colour = $('#colour').val();
+
+            var json = {
+                title: title,
+                colour: colour
+            }
+
+            var data = {
+                json: JSON.stringify(json)
+            }
+
+            $.ajax({
+                type: 'GET',
+                async: true,
+                dataType: 'json',
+                url: '@Url.Action("SearchUserCarsNotMatched", "Api")',
+                data: data
+            }).done(function (cars) {
+
+                $('#output').empty();
+                btn.removeAttr('disabled');
+
+                var table = $('#search-results');
+
+                // clear previous records (if any)
+                if ($('.car-details').length)
+                    $('.car-details').remove();
+
+                // for each car
+                for (var i = 0; i < cars.length; i++) {
+                    var car = cars[i];
+
+                    table.append(
+                        '<tr>' +
+                            '<td class="car-details"><a href="@Url.Action("ViewUserCar", "Home")?userCarId=' + car.id + '&carId=' + car.carId + '">' + car.carTitle + '</a></td>' +
+                            '<td class="car-details">' + car.colour + '</td>' +
+                        '</tr>'
+                    );
+                }
+            });
+        });
+
+        var json = {
+            amount: 20
+        };
+
+        var data = {
+            json: JSON.stringify(json)
+        };
+
+        // see if user can get similar user cars
+        $.ajax({
+            url: '@Url.Action("CanDoCommercialAction", "Api")',
+            method: 'GET',
+            dataType: 'json',
+            data: data
+        })
+        .done(function (result) {
+            if (result == true) {
+
+                $('#similarcars-container').show();
+
+                $('#similarcars').click(function (e) {
+                    e.preventDefault();
+                    var $this = $(this);
+
+                    var prompt = confirm("Are you sure you want to get cars of similar users? This will cost 20 credits.");
+
+                    if (prompt) {
+                        $.ajax({
+                            type: 'GET',
+                            async: true,
+                            dataType: 'json',
+                            url: '@Url.Action("GetSimilarUserCars", "Api")',
+                            data: data
+                        }).done(function (cars) {
+
+                            $('#output').empty();
+
+                            var table = $('#search-results');
+
+                            // clear previous records (if any)
+                            if ($('.car-details').length)
+                                $('.car-details').remove();
+
+                            // for each car
+                            for (var i = 0; i < cars.length; i++) {
+                                var car = cars[i];
+
+                                table.append(
+                                    '<tr>' +
+                                        '<td class="car-details"><a href="@Url.Action("ViewUserCar", "Home")?userCarId=' + car.id + '&carId=' + car.carId + '">' + car.carTitle + '</a></td>' +
+                                        '<td class="car-details">' + car.colour + '</td>' +
+                                    '</tr>'
+                                );
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+</script>
+}

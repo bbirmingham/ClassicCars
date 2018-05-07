@@ -1,0 +1,97 @@
+﻿@{
+    ViewBag.Title = "New User Car";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Add New User Car</h2>
+<p>Here you can add your car. If the model you want to list isn't listed, @Html.ActionLink("add it here", "NewCar", "Home").</p>
+<select id="cars-list">
+</select>
+<input type="text" id="colour" placeholder="The car colour"/>
+
+<button id="submit" type="button" class="btn btn-primary">Submit</button>
+<div id="output"></div>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+
+        // display all cars for user to select from dropdown list
+        $.ajax({
+            url: '@Url.Action("AllCars", "Api")',
+            method: 'GET',
+            dataType: 'json'
+        })
+        .done(function (cars) {
+            if (!cars.error) {
+                var list = $('#cars-list');
+
+                // for each car
+                // TODO add details link to car title
+                for (var i = 0; i < cars.length; i++) {
+                    var car = cars[i];
+
+                    list.append(
+                        '<option value="' + car.id + '">' + car.title + '</option>'
+                    );
+                }
+
+                loadJS();
+            }
+            else {
+                alert(cars.error);
+            }
+        })
+        .fail(function () {
+            alert("Unknown error occurred");
+        });
+
+        function loadJS() {
+
+            // submit button
+            $('#submit').click(function (e) {
+                var btn = $(this);
+
+                e.preventDefault();
+
+                // if disabled stop
+                if (btn.attr('disabled'))
+                    return;
+
+                // disable button to not allow spamming of button
+                btn.attr('disabled', 'disabled');
+
+                // add wait notice
+                $('#output').html('Submitting your car... please wait <img src="@Url.Content("~/Content/progress-wheel.gif")" />');
+
+                var carId = $('#cars-list').val();
+                var carTitle = $('#cars-list option:selected').text();
+                var colour = $('#colour').val();
+
+                var json = {
+                    carId: carId,
+                    carTitle: carTitle,
+                    colour: colour
+                }
+                    
+                var data = {
+                    json: JSON.stringify(json)
+                }
+
+                $.ajax({
+                    type: 'POST',
+                    async: true,
+                    dataType: 'json',
+                    url: '@Url.Action("CreateUserCar","Api")',
+                    data: data
+                });
+
+                // redirect the user after 3 seconds
+                setTimeout(function () {
+                    location.replace('@Url.Action("ManageUserCars", "Home")');
+                }, 3000);
+            });
+        }
+    });
+</script>
+}

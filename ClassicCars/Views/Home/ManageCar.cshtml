@@ -1,0 +1,173 @@
+﻿@{
+    ViewBag.Title = "Manage Car";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Manage Car</h2>
+<div id="output"></div>
+<form>
+    <div class="form-group">
+        <label for="title">Name of Car:</label>
+        <input class="form-control" id="title" type="text" placeholder="The car name" maxlength="30" name="title" />
+    </div>
+    <div class="form-group">
+        <label for="manufacturer">Manufacturer:</label>
+        <input class="form-control" id="manufacturer" type="text" placeholder="The manufacturer" maxlength="30" name="manufacturer" />
+    </div>
+    <div class="form-group">
+        <label for="fuel">Fuel Type:</label>
+        <input class="form-control" id="fuel" type="text" placeholder="The fuel type" maxlength="30" name="fuel" />
+    </div>
+    <div class="form-group">
+        <label for="acceleration">Acceleration:</label>
+        <input class="form-control" id="acceleration" type="text" placeholder="The acceleration" maxlength="30" name="acceleration" />
+    </div>
+    <div class="form-group">
+        <label for="cylinders">Amount of Cylinders:</label>
+        <input class="form-control" id="cylinders" type="text" placeholder="The amount of cylinders" maxlength="30" name="cylinders" />
+    </div>
+    <div class="form-group">
+        <label for="engine">Name of Engine:</label>
+        <input class="form-control" id="engine" type="text" placeholder="The name of the engine" maxlength="30" name="engine" />
+    </div>
+    <div class="form-group">
+        <label for="horsepower">Horsepower:</label>
+        <input class="form-control" id="horsepower" type="text" placeholder="The amount of horsepower" maxlength="30" name="horsepower" />
+    </div>
+    <div class="form-group">
+        <label for="weight">Weight:</label>
+        <input class="form-control" id="weight" type="text" placeholder="The amount of weight" maxlength="30" name="weight" />
+    </div>
+    <div class="form-group">
+        <label for="year">Year Manufacturered:</label>
+        <input class="form-control" id="year" type="text" placeholder="The year it was manufactured" maxlength="30" name="year" />
+    </div>
+    <div class="form-group">
+        <label for="mpg">Miles per Gallon:</label>
+        <input class="form-control" id="mpg" type="text" placeholder="The car name" maxlength="30" name="mpg" />
+    </div>
+    <div class="form-group">
+        <label for="origin">Country of Origin:</label>
+        <input class="form-control" id="origin" type="text" placeholder="The car name" maxlength="30" name="origin" />
+    </div>
+    <button id="submit" type="button" class="btn btn-primary">Submit</button>
+</form>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+
+        // preload car details
+        var carId = main.getUrlVar('id');
+
+        if (!carId) {
+            alert('No ID provided!');
+            location.replace('@Url.Action("ManageCars", "Home")');
+            return;
+        }
+
+        var json = {
+            id: carId
+        }
+
+        var data = {
+            json: JSON.stringify(json)
+        }
+
+        $.ajax({
+            url: '@Url.Action("Car", "Api")',
+            method: 'GET',
+            dataType: 'json',
+            data: data
+        })
+        .done(function (car) {
+            if (!car.error) {
+
+                $('#title').val(car.title);
+                $('#mpg').val(car.mpg);
+                $('#fuel').val(car.fuel);
+                $('#manufacturer').val(car.manufacturer);
+                $('#engine').val(car.engine);
+                $('#year').val(car.year);
+                $('#weight').val(car.weight);
+                $('#cylinders').val(car.cylinders);
+                $('#horsepower').val(car.horsepower);
+                $('#origin').val(car.origin);
+                $('#acceleration').val(car.acceleration);
+
+                loadJS();
+            }
+            else {
+                alert(cars.error);
+            }
+        })
+        .fail(function () {
+            alert("Unknown error occurred");
+        });
+
+        function loadJS() {
+
+            // submit button
+            $('#submit').click(function (e) {
+                var btn = $(this);
+
+                e.preventDefault();
+
+                // if disabled stop
+                if (btn.attr('disabled'))
+                    return;
+
+                // disable button to not allow spamming of button
+                btn.attr('disabled', 'disabled');
+
+                // add wait notice
+                $('#output').html('Updating car details... please wait <img src="@Url.Content("~/Content/progress-wheel.gif")" />');
+
+                var title = $('#title').val();
+                var mpg = $('#mpg').val();
+                var fuel = $('#fuel').val();
+                var manufacturer = $('#manufacturer').val();
+                var engine = $('#engine').val();
+                var year = $('#year').val();
+                var weight = $('#weight').val();
+                var cylinders = $('#cylinders').val();
+                var horsepower = $('#horsepower').val();
+                var origin = $('#origin').val();
+                var acceleration = $('#acceleration').val();
+
+                var json = {
+                    id: carId,
+                    title: title,
+                    mpg: mpg,
+                    fuel: fuel,
+                    manufacturer: manufacturer,
+                    engine: engine,
+                    year: year,
+                    weight: weight,
+                    cylinders: cylinders,
+                    horsepower: horsepower,
+                    origin: origin,
+                    acceleration: acceleration
+                }
+
+                var data = {
+                    json: JSON.stringify(json)
+                }
+
+                $.ajax({
+                    type: 'PUT',
+                    async: true,
+                    dataType: 'json',
+                    url: '@Url.Action("EditCar","Api")',
+                    data: data
+                });
+
+                // redirect the user after 3 seconds
+                setTimeout(function () {
+                    location.replace('@Url.Action("ManageCars", "Home")');
+                }, 3000);
+            });
+        }
+    });
+</script>
+}

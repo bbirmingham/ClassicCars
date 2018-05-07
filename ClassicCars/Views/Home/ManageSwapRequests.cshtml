@@ -1,0 +1,220 @@
+﻿@{
+    ViewBag.Title = "Manage Swap Requests";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Manage Swap Requests</h2>
+<h3>Active Swap Requests Created</h3>
+<div class="table-responsive">
+    <table id="requests-created" class="table">
+        <tr>
+            <th>Your Car Name</th>
+            <th>Your Car Colour</th>
+            <th>Their Car Name</th>
+            <th>Their Car Colour</th>
+            <th>Their User Name</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </table>
+</div>
+<div id="output1"></div>
+
+<h3>Active Swap Requests Received</h3>
+<div class="table-responsive">
+    <table id="requests-received" class="table">
+        <tr>
+            <th>Your Car Name</th>
+            <th>Your Car Colour</th>
+            <th>Their Car Name</th>
+            <th>Their Car Colour</th>
+            <th>Their User Name</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </table>
+</div>
+<div id="output2"></div>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+        // requests made
+        $.ajax({
+            url: '@Url.Action("SwapRequestsMade", "Api")',
+            method: 'GET',
+            dataType: 'json'
+        })
+            .done(function (requests) {
+                if (!requests.error) {
+                    if (requests[0]) {
+                        var table = $('#requests-created');
+
+                        for (var i = 0; i < requests.length; i++) {
+                            var request = requests[i];
+                            var status = "Pending";
+
+                            if (request.confirmed == 1) {
+                                status = "Confirmed";
+                            }
+                            else if (request.confirmed == 2) {
+                                status = "Rejected";
+                            }
+
+                            table.append(
+                                '<tr>' +
+                                    '<td>' + request.requestUserCarTitle + '</td>' +
+                                    '<td>' + request.requestUserCarColour + '</td>' +
+                                    '<td>' + request.targetUserCarTitle + '</td>' +
+                                    '<td>' + request.targetUserCarColour + '</td>' +
+                                    '<td>' + request.targetUserName + '</td>' +
+                                    '<td>' + status + '</td>' +
+                                    '<td><a class="request-delete" href="#" data-id="' + request.id + '" data-carid="' + request.requestUserCarId + '">Delete</a></td>' +
+                                '</tr>'
+                            );
+                        }
+
+                        loadJS1();
+                    }
+                    else {
+                        $('#output1').html('You have no requests!');
+                    }
+                }
+                else {
+                    console.log(requests.error);
+                }
+            })
+            .fail(function () {
+                alert("Unknown error occurred");
+            });
+
+        // requests received
+        $.ajax({
+            url: '@Url.Action("SwapRequestsReceived", "Api")',
+            method: 'GET',
+            dataType: 'json'
+        })
+            .done(function (requests) {
+                if (!requests.error) {
+                    if (requests[0]) {
+                        var table = $('#requests-received');
+
+                        for (var i = 0; i < requests.length; i++) {
+                            var request = requests[i];
+                            var status = "Pending";
+                            var action;
+
+                            if (request.confirmed == 1) {
+                                status = "Confirmed";
+                                action = '<a class="request-confirm" href="#" data-id="' + request.id + '" data-carid="' + request.targetUserCarId + '" data-action="reject" data-confirmed="2">Reject</a>';
+                            }
+                            else if (request.confirmed == 2) {
+                                status = "Rejected";
+                                action = '<a class="request-confirm" href="#" data-id="' + request.id + '" data-carid="' + request.targetUserCarId + '" data-action="accept" data-confirmed="1">Accept</a>';
+                            }
+                            else {
+                                action = '<a class="request-confirm" href="#" data-id="' + request.id + '" data-carid="' + request.targetUserCarId + '" data-action="reject" data-confirmed="2">Reject</a> | <a class="request-confirm" href="#" data-id="' + request.id + '" data-carid="' + request.targetUserCarId + '" data-action="accept" data-confirmed="1">Accept</a>';
+                            }
+
+                            table.append(
+                                '<tr>' +
+                                    '<td>' + request.requestUserCarTitle + '</td>' +
+                                    '<td>' + request.requestUserCarColour + '</td>' +
+                                    '<td>' + request.targetUserCarTitle + '</td>' +
+                                    '<td>' + request.targetUserCarColour + '</td>' +
+                                    '<td>' + request.requestUserName + '</td>' +
+                                    '<td>' + status + '</td>' +
+                                    '<td>' + action + ' </td>' +
+                                '</tr>'
+                            );
+                        }
+
+                        loadJS2();
+                    }
+                    else {
+                        $('#output2').html('You have no requests!');
+                    }
+                }
+                else {
+                    console.log(requests.error);
+                }
+            })
+            .fail(function () {
+                alert("Unknown error occurred");
+            });
+
+        function loadJS1() {
+            $('.request-delete').click(function () {
+                var prompt = confirm("Are you sure you want to delete this request?");
+
+                if (prompt) {
+
+                    var $this = $(this);
+
+                    var json = {
+                        id: $this.data('id'),
+                        carId: $this.data('carid')
+                    };
+
+                    var data = {
+                        json: JSON.stringify(json)
+                    };
+
+                    // send delete request
+                    $.ajax({
+                        type: 'DELETE',
+                        async: true,
+                        dataType: 'json',
+                        url: '@Url.Action("DeleteSwapRequest", "Api")',
+                        data: data
+                    })
+
+                    var row = $this.parent().parent();
+                    row.fadeOut(500, function () {
+                        row.remove();
+                    });
+                }
+            });
+        }
+
+        function loadJS2() {
+            $('.request-confirm').click(function () {
+                var $this = $(this);
+                var action = $this.data('action');
+
+                var prompt = confirm("Are you sure you want to " + action + " this request?");
+
+                if (prompt) {
+
+                    var $this = $(this);
+
+                    var json = {
+                        id: $this.data('id'),
+                        carId: $this.data('carid'),
+                        confirmed: $this.data('confirmed')
+                    };
+
+                    var data = {
+                        json: JSON.stringify(json)
+                    };
+
+                    // send edit request
+                    $.ajax({
+                        type: 'PUT',
+                        async: true,
+                        dataType: 'json',
+                        url: '@Url.Action("EditSwapRequest", "Api")',
+                        data: data
+                    })
+
+                    var row = $this.parent().parent();
+                    row.fadeOut(500, function () {
+                        row.remove();
+                    });
+                }
+            });
+        }
+
+    });
+    </script>
+}

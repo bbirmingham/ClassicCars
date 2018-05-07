@@ -1,0 +1,129 @@
+﻿@{
+    ViewBag.Title = "View User Car";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>View User Car</h2>
+<h3>General Information</h3>
+<div class="table-responsive">
+    <table id="car-result" class="table">
+        <tr>
+            <th>Name</th>
+            <th>MPG</th>
+            <th>Fuel</th>
+            <th>Manufacturer</th>
+            <th>Engine</th>
+            <th>Year</th>
+            <th>Weight</th>
+            <th>Cylinders</th>
+            <th>Horsepower</th>
+            <th>Origin</th>
+            <th>Acceleration</th>
+        </tr>
+    </table>
+</div>
+
+<h3>User Specific</h3>
+<div class="table-responsive">
+    <table id="usercar-result" class="table">
+        <tr>
+            <th>Colour</th>
+            <th>Status</th>
+        </tr>
+    </table>
+</div>
+
+
+@section scripts {
+    <script type="text/javascript">
+    $(function() {
+        var userCarId = main.getUrlVar('userCarId');
+
+        if (!userCarId) {
+            alert('No ID provided!');
+            location.replace('@Url.Action("ManageUserCars", "Home")');
+            return;
+        }
+
+        var json = {
+            id: userCarId
+        };
+
+        var data = {
+            json: JSON.stringify(json)
+        };
+
+        $.ajax({
+            url: '@Url.Action("UserCar", "Api")',
+            method: 'GET',
+            data: data,
+            dataType: 'json'
+        })
+        .done(function (userCar) {
+            if (!userCar.error) {
+                var table = $('#usercar-result');
+                var status = "Unavailable";
+
+                if (userCar.isMatched == 0) {
+                    status = '<a href="@Url.Action("NewSwapRequest", "Home")?id=' + userCarId + '">Available</a>';
+                }
+
+                table.append(
+                    '<tr>' +
+                        '<td class="car-details">' + userCar.colour + '</td>' +
+                        '<td class="car-details">' + status + '</td>' +
+                    '</tr>'
+                );
+
+                var json = {
+                    id: userCar.carId
+                };
+
+                var data = {
+                    json: JSON.stringify(json)
+                };
+
+                $.ajax({
+                    url: '@Url.Action("Car", "Api")',
+                    method: 'GET',
+                    data: data,
+                    dataType: 'json'
+                })
+                .done(function (car) {
+                    if (!car.error) {
+                        var table = $('#car-result');
+
+                        table.append(
+                            '<tr>' +
+                                '<td class="car-details">' + car.title + '</td>' +
+                                '<td class="car-details">' + car.mpg + '</td>' +
+                                '<td class="car-details">' + car.fuel + '</td>' +
+                                '<td class="car-details">' + car.manufacturer + '</td>' +
+                                '<td class="car-details">' + car.engine + '</td>' +
+                                '<td class="car-details">' + car.year + '</td>' +
+                                '<td class="car-details">' + car.weight + '</td>' +
+                                '<td class="car-details">' + car.cylinders + '</td>' +
+                                '<td class="car-details">' + car.horsepower + '</td>' +
+                                '<td class="car-details">' + car.origin + '</td>' +
+                                '<td class="car-details">' + car.acceleration + '</td>' +
+                            '</tr>'
+                        );
+                    }
+                    else {
+                        alert(car.error);
+                    }
+                })
+                .fail(function () {
+                    alert("Unknown error occurred");
+                });
+            }
+            else {
+                alert(userCar.error);
+            }
+        })
+        .fail(function () {
+            alert("Unknown error occurred");
+        });
+    });
+</script>
+}

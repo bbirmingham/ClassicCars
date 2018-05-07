@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Schema Namespace="AppDBModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+  <EntityType Name="Cars">
+    <Key>
+      <PropertyRef Name="carId" />
+    </Key>
+    <Property Name="carId" Type="int" Nullable="false" />
+    <Property Name="mpg" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="cylinders" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="engine" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="horsepower" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="weight" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="acceleration" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="year" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="origin" Type="nchar" MaxLength="10" Nullable="false" />
+    <Property Name="title" Type="nvarchar" MaxLength="50" Nullable="false" />
+  </EntityType>
+  <EntityType Name="Ratings">
+    <Key>
+      <PropertyRef Name="ratingId" />
+    </Key>
+    <Property Name="ratingId" Type="int" Nullable="false" />
+    <Property Name="carId" Type="int" Nullable="false" />
+    <Property Name="userId" Type="nvarchar" MaxLength="50" Nullable="false" />
+    <Property Name="stars" Type="int" Nullable="false" />
+  </EntityType>
+  <EntityType Name="UserCars">
+    <Key>
+      <PropertyRef Name="carId" />
+    </Key>
+    <Property Name="carId" Type="int" Nullable="false" />
+    <Property Name="userId" Type="nvarchar" MaxLength="50" Nullable="false" />
+    <Property Name="isMatched" Type="smallint" />
+  </EntityType>
+  <EntityContainer Name="AppDBModelStoreContainer">
+    <EntitySet Name="Cars" EntityType="Self.Cars" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="Ratings" EntityType="Self.Ratings" Schema="dbo" store:Type="Tables" />
+    <EntitySet Name="UserCars" EntityType="Self.UserCars" Schema="dbo" store:Type="Tables" />
+  </EntityContainer>
+</Schema>

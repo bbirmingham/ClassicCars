@@ -1,0 +1,152 @@
+﻿@{
+    ViewBag.Title = "Recommender Demo";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section stylesheets {
+    <link href="@Url.Content("~/Content/rateit.css")" rel="stylesheet" type="text/css" />
+}
+
+<h2>Recommender Demo</h2>
+<p>Rate some cars below then view the ratings of a user with similar preferences to you.</p>
+<div id="output"></div>
+<div id="ratings-list">
+    <ul />
+</div>
+<button id="submit" type="button" class="btn btn-primary">Submit</button>
+
+<div class="table-responsive">
+    <table id="cars" class="table">
+    </table>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+
+        // display ratings for cars
+        $.ajax({
+            url: '@Url.Action("AllCars", "Api")',
+            method: 'GET',
+            dataType: 'json'
+        })
+        .done(function (cars) {
+            if (!cars.error) {
+                if (cars[0]) {
+                    var list = $('#ratings-list ul');
+
+                    // for each rating
+                    for (var i = 0; i < cars.length; i++) {
+                        var car = cars[i];
+
+                        list.append(
+                            '<li class="rating">'
+                                + '<h3>' + car.title + '</h3>'
+                                + '<input type="range" min="1" max="6" value="1" step="1" id="' + car.id + '" />'
+                                + '<div class="rateit" data-rateit-backingfld="#' + car.id + '"></div>'
+                         + '</li>'
+                        );
+                    }
+
+                    loadJS();
+                }
+            }
+            else {
+                alert(cars.error);
+            }
+        })
+        .fail(function () {
+            alert("Unknown error occurred");
+        });
+
+        function loadJS() {
+            $.getScript("@Url.Content("~/Scripts/jquery.rateit.min.js")");
+
+            // submit button
+            $('#submit').click(function (e) {
+                var btn = $(this);
+
+                e.preventDefault();
+
+                // if disabled stop
+                if (btn.attr('disabled'))
+                    return;
+
+                // disable button to not allow spamming of button
+                btn.attr('disabled', 'disabled');
+
+                // add wait notice
+                $('#output').html('Fetching your recommendations... please wait <img src="@Url.Content("~/Content/progress-wheel.gif")" />');
+
+                var json = [];
+
+                // for each rating
+                $('.rating').each(function (i) {
+                    var $this = $(this);
+
+                    var val = $this.find('.rateit').find('.rateit-range').attr('aria-valuenow') - 1;
+
+                    if (val > 0) {
+                        json.push({
+                            carId: $this.find('input').attr('id'),
+                            stars: val
+                        });
+                    }
+                });
+
+                if (json.length > 0) {
+
+                    var data = {
+                        json: JSON.stringify(json)
+                    }
+
+                    $.ajax({
+                        type: 'GET',
+                        async: true,
+                        dataType: 'json',
+                        url: '@Url.Action("RecommenderDemo", "Api")',
+                        data: data
+                    }).done(function (cars) {
+
+                        btn.removeAttr('disabled');
+
+                        if (!cars.error) {
+                            $('#output').html('<p>Here are cars of a user with a similar taste to you...</p>');
+                            var table = $('#cars');
+                            table.empty();
+
+                            // add heading
+                            table.append(
+                                '<tr>' +
+                                    '<th>Name</th>' +
+                                    '<th>Colour</th>' +
+                                '</tr>'
+                            );
+
+                            // for each car
+                            for (var i = 0; i < cars.length; i++) {
+                                var car = cars[i];
+
+                                table.append(
+                                    '<tr>' +
+                                        '<td>' + car.carTitle + '</td>' +
+                                        '<td>' + car.colour + '</td>' +
+                                    '</tr>'
+                                );
+                            }
+                        }
+
+                        else {
+                            $('#output').html('<p>' + cars.error + '</p>');
+                        }
+                    });
+                }
+                else {
+                    $('#output').html('You need to rate cars to get results!');
+                    btn.removeAttr('disabled');
+                }
+            });
+        }
+    });
+</script>
+}

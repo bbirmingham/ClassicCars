@@ -1,0 +1,165 @@
+﻿@{
+    ViewBag.Title = "Manage Ratings";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section stylesheets {
+    <link href="@Url.Content("~/Content/rateit.css")" rel="stylesheet" type="text/css" />
+}
+
+<h2>Manage Your Ratings</h2>
+<p>Here you can manage your ratings. If you want to rate more cars, @Html.ActionLink("do so here", "NewRatings", "Home").</p>
+<div class="table-responsive">
+    <table id="ratings" class="table">
+        <tr>
+            <th>Name</th>
+            <th>Rating</th>
+            <th>Edit</th>
+            <th>Delete</th>
+        </tr>
+    </table>
+</div>
+<div id="output"></div>
+<button id="submit" type="button" class="btn btn-primary">Submit</button>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+
+        // display ratings the user has made before
+        $.ajax({
+            url: '@Url.Action("Ratings", "Api")',
+            method: 'GET',
+            dataType: 'json'
+        })
+            .done(function (ratings) {
+                if (!ratings.error) {
+                    if (ratings[0]) {
+                        var list = $('#ratings');
+
+                        // for each rating
+                        for (var i = 0; i < ratings.length; i++) {
+                            var rating = ratings[i];
+                            rating.stars++;
+
+                            list.append(
+                                '<tr class="rating" data-id="' + i + '" data-original="' + rating.stars + '">' +
+                                    '<td><a href="@Url.Action("ManageCar", "Home")?id=' + rating.carId + '">' + rating.carTitle + '</a></td>' +
+                                    '<td>' +
+                                        '<input type="range" min="1" max="6" value="' + rating.stars + '" step="1" id="' + rating.id + '" />' +
+                                        '<div class="rateit" data-rateit-backingfld="#' + rating.id + '"></div>' +
+                                    '</td>' +
+                                    '<td><input type="radio" id="rating-edit-' + i + '" class="edit" name="action-' + i + '" value="edit" /></td>' +
+                                    '<td><input type="radio" id="rating-delete-' + i + '" class="delete" name="action-' + i + '" value="delete" /></td>' +
+                                '</tr>'
+                            );
+                        }
+
+                        loadJS();
+                    }
+                    else {
+                        $('#output').html('You have no ratings! <a href="@Url.Action("NewRatings", "Home")">Rate some cars</a>');
+                        $('#submit').attr('disabled', 'disabled');
+                    }
+                }
+                else {
+                    alert(ratings.error);
+                }
+            })
+            .fail(function () {
+                alert("Unknown error occurred");
+            });
+
+        function loadJS() {
+            $.getScript("@Url.Content("~/Scripts/jquery.rateit.min.js")");
+
+            // submit button
+            $('#submit').click(function (e) {
+                var btn = $(this);
+
+                e.preventDefault();
+
+                // if disabled stop
+                if (btn.attr('disabled'))
+                    return;
+
+                // disable button to not allow spamming requests
+                btn.attr('disabled', 'disabled');
+
+                // add notice
+                $('#output').html('Submitting your changes... please wait <img src="@Url.Content("~/Content/progress-wheel.gif")" />');
+
+                var ratingsToSubmit = [];
+
+                // remember ratings that the user wants to submit
+                $('.rating').each(function () {
+                    var $this = $(this);
+                    var id = $this.data('id');
+                    var action = $this.find('td').find('input[name=action-' + id + ']:checked').val();
+                    var val = $this.find('td').find('rateit').find('.rateit-range').attr('aria-valuenow') - 1;
+                    var originalVal = $this.data('original') - 1;
+
+                    if (action && (action == "delete" || val != originalVal))
+                        ratingsToSubmit.push($this);
+                });
+
+                if (ratingsToSubmit.length > 0) {
+
+                    // submit each selected rating
+                    $(ratingsToSubmit).each(function (i) {
+                        var $this = $(this);
+
+                        setTimeout(function () {
+                            var id = $this.data('id');
+                            var action = $this.find('td').find('input[name=action-' + id + ']:checked').val();
+                            var params = {
+                                type: 'PUT',
+                                url: '@Url.Action("EditRating", "Api")'
+                            };
+
+                            var json = {
+                                id: $this.find('td').find('input:first').attr('id')
+                            };
+
+                            if (action == "edit") {
+                                json.rating = $this.find('td').find('.rateit').find('.rateit-range').attr('aria-valuenow') - 1;
+                            }
+                            else { // delete
+                                params.type = 'DELETE';
+                                params.url = '@Url.Action("DeleteRating", "Api")';
+                            }
+
+                            var data = {
+                                json: JSON.stringify(json)
+                            }
+
+                            $.ajax({
+                                type: params.type,
+                                async: true,
+                                dataType: 'json',
+                                url: params.url,
+                                data: data
+                            });
+
+                            // redirect the user when finished after 3 seconds
+                            if (i === $(ratingsToSubmit).length - 1) {
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 3000);
+                            }
+
+                        }, i * 1000); // up to one API request per second to not overwhelm the server
+                    });
+                }
+                else {
+                    // remove button disable
+                    btn.removeAttr('disabled');
+
+                    // update notice
+                    $('#output').html('Nothing to submit!');
+                }
+            });
+        }
+    });
+</script>
+}

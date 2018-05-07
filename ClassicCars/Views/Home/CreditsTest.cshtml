@@ -1,0 +1,74 @@
+﻿@{
+    ViewBag.Title = "Credits Test Page";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Credits Test Page</h2>
+<p>Use this page to add/remove credits/subscriptions. You should configure your own payment system (PayPal etc). To be used for testing purposes only. The corresponding API in the controller should be removed after to prevent exploits.</p>
+
+<input type="text" id="subscription" placeholder="DD/MM/YYYY" />
+<button id="subscription1" type="button" class="btn btn-primary">Set Subscription</button>
+<button id="subscription2" type="button" class="btn btn-primary">Remove Subscription</button>
+<button id="credits1" type="button" class="btn btn-primary">Set 100 credits</button>
+<button id="credits2" type="button" class="btn btn-primary">Set credits to 0</button>
+
+@section scripts {
+    <script type="text/javascript">
+    $(function () {
+
+        $('#subscription1').click(function (e) {
+            e.preventDefault();
+
+            var json = {
+                expiry: $('#subscription').val()
+            }
+
+            var data = {
+                json: JSON.stringify(json)
+            }
+
+            $.ajax({
+                type: 'POST',
+                async: true,
+                dataType: 'json',
+                url: '@Url.Action("SetSubscription","Api")',
+                data: data
+            });
+        });
+
+        $('#subscription2').click(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                type: 'GET',
+                async: true,
+                dataType: 'json',
+                url: '@Url.Action("RemoveSubscription","Api")'
+            });
+        });
+
+        $('#credits1').click(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                type: 'GET',
+                async: true,
+                dataType: 'json',
+                url: '@Url.Action("Set100Credits","Api")'
+            });
+        });
+
+        $('#credits2').click(function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                type: 'GET',
+                async: true,
+                dataType: 'json',
+                url: '@Url.Action("RemoveCredits","Api")'
+            });
+        });
+
+    });
+</script>
+}
